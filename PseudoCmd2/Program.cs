@@ -169,10 +169,15 @@ class Program
 
         var script = sb.ToString();
 
+        /// d   // レジストリに設定されている AutoRun コマンドを無効化
+        /// q   // コマンドのエコーをオフ（@echo off と同等）
+        /// s   // コマンドラインの引用符 (") の解釈方法を変更
+        /// c   // 指定したコマンド（script）を実行して cmd.exe を終了
+
         var psi = new ProcessStartInfo
         {
             FileName = "cmd.exe",
-            Arguments = "/c " + script,
+            Arguments = "/d /q /s /c " + script,
             WorkingDirectory = state.Cwd,
             UseShellExecute = false,
             RedirectStandardOutput = true,
