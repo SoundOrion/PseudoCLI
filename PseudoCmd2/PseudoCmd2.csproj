@@ -43,8 +43,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Builtins.cs" />
+    <Compile Include="CmdQuoting.cs" />
+    <Compile Include="CmdRunner.cs" />
+    <Compile Include="CommandParsing.cs" />
+    <Compile Include="ProcessCompat.cs" />
+    <Compile Include="ProcessPumping.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ShellState.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
