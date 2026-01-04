@@ -39,10 +39,18 @@ namespace PseudoCLI
                 return true;
             }
 
+            // 1) まず普通に辞書で探す
             if (_commands.TryGetValue(name, out var cmd))
             {
-                int code = await cmd.ExecuteAsync(args, state);
-                // code を使って何かしたければここで（今は表示しない）
+                await cmd.ExecuteAsync(args, state);
+                return true;
+            }
+
+            // 2) 見つからなければ「cmd/args」形式を救済（例: cd/d → cd + /d）
+            if (TrySplitWithSlash(input, out var name2, out var args2) &&
+                _commands.TryGetValue(name2, out var cmd2))
+            {
+                await cmd2.ExecuteAsync(args2, state);
                 return true;
             }
 
@@ -81,6 +89,34 @@ namespace PseudoCLI
             var name = input.Substring(0, i);
             var args = (i < input.Length) ? input.Substring(i).TrimStart() : "";
             return (name, args);
+        }
+
+        // 例: "cd/d foo" -> name="cd", args="/d foo"
+        //     "cd/d"     -> name="cd", args="/d"
+        private bool TrySplitWithSlash(string input, out string name, out string args)
+        {
+            name = "";
+            args = "";
+
+            // 登録済みコマンド名のうち、"name/" で始まる最長一致を探す
+            // (例: 将来 "foo" と "foo2" があっても安全)
+            string best = null;
+
+            foreach (var key in _commands.Keys)
+            {
+                if (input.Length <= key.Length) continue;
+                if (!input.StartsWith(key, StringComparison.OrdinalIgnoreCase)) continue;
+                if (input[key.Length] != '/') continue;
+
+                if (best == null || key.Length > best.Length)
+                    best = key;
+            }
+
+            if (best == null) return false;
+
+            name = best;
+            args = input.Substring(best.Length).TrimStart(); // "/" から後ろ（例: "/d ...")
+            return true;
         }
     }
 }
