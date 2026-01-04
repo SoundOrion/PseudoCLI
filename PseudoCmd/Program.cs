@@ -8,8 +8,8 @@ class Program
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
         Console.Title = "PseudoCLI";
-        Console.OutputEncoding = Encoding.UTF8;
-        Console.InputEncoding = Encoding.UTF8;
+        Console.OutputEncoding = Encoding.GetEncoding(932);
+        Console.InputEncoding = Encoding.GetEncoding(932);
 
         // cmdっぽいヘッダ
         Console.WriteLine($"Microsoft Windows [Version {Environment.OSVersion.Version}]");
