@@ -145,7 +145,7 @@ class Program
         var sb = new StringBuilder();
 
         // 文字コード（毎回 cmd 起動するなら仕方ない）
-        sb.Append("chcp 65001>nul & ");
+        sb.Append("chcp 932>nul & ");
 
         // cwd
         sb.Append("cd /d ");
