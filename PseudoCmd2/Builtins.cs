@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace PseudoCLI
 {
@@ -9,27 +10,59 @@ namespace PseudoCLI
     {
         private readonly ShellState _state;
 
+        // コマンド名 → ハンドラ
+        private readonly Dictionary<string, Func<string, Task<bool>>> _handlers
+            = new Dictionary<string, Func<string, Task<bool>>>(StringComparer.OrdinalIgnoreCase);
+
         public Builtins(ShellState state)
         {
             _state = state ?? throw new ArgumentNullException(nameof(state));
+
+            // ここで登録（追加が楽）
+            Register("cd", HandleCdAsync);
+            Register("set", HandleSetAsync);
+
+            // 例：エイリアスも簡単
+            // Register("chdir", HandleCdAsync);
         }
 
-        public bool TryHandle(string input)
+        public void Register(string name, Func<string, Task<bool>> handler)
         {
-            return TryHandleCd(input) || TryHandleSet(input);
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("name is empty.", nameof(name));
+            if (handler == null) throw new ArgumentNullException(nameof(handler));
+            _handlers[name] = handler;
         }
 
-        private bool TryHandleCd(string input)
+        /// <summary>
+        /// 入力行が builtin なら実行して true、違うなら false
+        /// </summary>
+        public Task<bool> TryHandleAsync(string input)
         {
-            if (!CommandParsing.StartsWithCommand(input, "cd"))
-                return false;
+            if (string.IsNullOrWhiteSpace(input))
+                return Task.FromResult(false);
 
-            var arg = input.Length > 2 ? input.Substring(2).Trim() : "";
+            var (cmd, rest) = SplitCommand(input);
+
+            if (cmd.Length == 0)
+                return Task.FromResult(false);
+
+            if (_handlers.TryGetValue(cmd, out var handler))
+                return handler(rest);
+
+            return Task.FromResult(false);
+        }
+
+        // ----------------------------
+        // cd
+        // ----------------------------
+        private Task<bool> HandleCdAsync(string rest)
+        {
+            var arg = (rest ?? "").Trim();
 
             if (arg.Length == 0)
             {
                 Console.WriteLine(_state.Cwd);
-                return true;
+                return Task.FromResult(true);
             }
 
             if (arg.StartsWith("/d", StringComparison.OrdinalIgnoreCase))
@@ -43,7 +76,7 @@ namespace PseudoCLI
                 if (!Directory.Exists(target))
                 {
                     Console.Error.WriteLine("The system cannot find the path specified.");
-                    return true;
+                    return Task.FromResult(true);
                 }
 
                 _state.Cwd = target;
@@ -54,16 +87,17 @@ namespace PseudoCLI
                 Console.Error.WriteLine(ex.Message);
             }
 
-            return true;
+            return Task.FromResult(true);
         }
 
-        private bool TryHandleSet(string input)
+        // ----------------------------
+        // set
+        // ----------------------------
+        private async Task<bool> HandleSetAsync(string rest)
         {
-            if (!CommandParsing.StartsWithCommand(input, "set"))
-                return false;
+            var arg = (rest ?? "").Trim();
 
-            var arg = input.Length > 3 ? input.Substring(3).Trim() : "";
-
+            // set （一覧表示）
             if (arg.Length == 0)
             {
                 var all = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -84,7 +118,7 @@ namespace PseudoCLI
             if (eq < 0)
             {
                 // cmd.exe に委譲（set PATH 等）
-                CmdRunner.RunCmdStreamingAsync("set " + arg, _state).GetAwaiter().GetResult();
+                await CmdRunner.RunCmdStreamingAsync("set " + arg, _state);
                 return true;
             }
 
@@ -99,6 +133,25 @@ namespace PseudoCLI
 
             _state.Env[name] = value;
             return true;
+        }
+
+        // ----------------------------
+        // 入力からコマンドと残りを分離
+        // 例: "cd  aaa" -> ("cd", "aaa")
+        //     "set"     -> ("set", "")
+        // ----------------------------
+        private static (string cmd, string rest) SplitCommand(string input)
+        {
+            input = input.TrimStart();
+
+            int i = 0;
+            while (i < input.Length && !char.IsWhiteSpace(input[i]))
+                i++;
+
+            var cmd = input.Substring(0, i);
+            var rest = (i < input.Length) ? input.Substring(i).TrimStart() : "";
+
+            return (cmd, rest);
         }
     }
 }
