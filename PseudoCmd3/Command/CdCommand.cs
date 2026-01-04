@@ -9,7 +9,7 @@ namespace PseudoCLI.Command
         public string Name => "cd";
         public string Help => "Change the current directory. (cd [path])";
 
-        public Task<int> ExecuteAsync(string args, ShellState state)
+        public Task<int> ExecuteAsync(string args, ShellState state, CmdRunner runner)
         {
             args = (args ?? "").Trim();
 

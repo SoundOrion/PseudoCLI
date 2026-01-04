@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace PseudoCLI
 {
-    internal static class CmdRunner
+    internal class CmdRunner
     {
-        public static async Task<int> RunCmdStreamingAsync(string command, ShellState state)
+        public async Task<int> RunCmdStreamingAsync(string command, ShellState state)
         {
             var sb = new StringBuilder();
 

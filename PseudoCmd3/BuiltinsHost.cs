@@ -26,7 +26,7 @@ namespace PseudoCLI
 
         public bool Has(string name) => _commands.ContainsKey(name);
 
-        public async Task<bool> TryHandleAsync(string input, ShellState state)
+        public async Task<bool> TryHandleAsync(string input, ShellState state, CmdRunner runner)
         {
             if (string.IsNullOrWhiteSpace(input)) return false;
 
@@ -42,7 +42,7 @@ namespace PseudoCLI
             // 1) まず普通に辞書で探す
             if (_commands.TryGetValue(name, out var cmd))
             {
-                await cmd.ExecuteAsync(args, state);
+                await cmd.ExecuteAsync(args, state, runner);
                 return true;
             }
 
@@ -50,7 +50,7 @@ namespace PseudoCLI
             if (TrySplitWithSlash(input, out var name2, out var args2) &&
                 _commands.TryGetValue(name2, out var cmd2))
             {
-                await cmd2.ExecuteAsync(args2, state);
+                await cmd2.ExecuteAsync(args2, state, runner);
                 return true;
             }
 

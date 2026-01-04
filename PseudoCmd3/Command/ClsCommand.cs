@@ -7,7 +7,7 @@ namespace PseudoCLI.Command
         public string Name => "cls";
         public string Help => "Clear the screen.";
 
-        public Task<int> ExecuteAsync(string args, ShellState state)
+        public Task<int> ExecuteAsync(string args, ShellState state, CmdRunner runner)
         {
             System.Console.Clear();
             return Task.FromResult(0);

@@ -7,7 +7,7 @@ namespace PseudoCLI.Command
         public string Name => "prompt";
         public string Help => "Change prompt. Use $P for path, $G for '>'. (prompt <format>)";
 
-        public Task<int> ExecuteAsync(string args, ShellState state)
+        public Task<int> ExecuteAsync(string args, ShellState state, CmdRunner runner)
         {
             args = (args ?? "").Trim();
 

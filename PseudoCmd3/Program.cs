@@ -18,6 +18,7 @@ namespace PseudoCLI
             Console.WriteLine();
 
             var state = new ShellState().CreateDefault();
+            var runner = new CmdRunner();
 
             var builtins = new BuiltinsHost(new ICommand[]
             {
@@ -42,10 +43,10 @@ namespace PseudoCLI
                 if (line.Equals("exit", StringComparison.OrdinalIgnoreCase))
                     return 0;
 
-                if (await builtins.TryHandleAsync(line, state))
+                if (await builtins.TryHandleAsync(line, state, runner))
                     continue;
 
-                await CmdRunner.RunCmdStreamingAsync(line, state);
+                await runner.RunCmdStreamingAsync(line, state);
             }
 
             return 0;

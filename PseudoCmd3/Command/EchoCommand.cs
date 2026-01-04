@@ -7,7 +7,7 @@ namespace PseudoCLI.Command
         public string Name => "echo";
         public string Help => "Echo text. (echo <text>)";
 
-        public Task<int> ExecuteAsync(string args, ShellState state)
+        public Task<int> ExecuteAsync(string args, ShellState state, CmdRunner runner)
         {
             // cmd.exe の echo に寄せるなら "echo." なども実装できるけど、まずは素直に
             System.Console.WriteLine(args ?? "");

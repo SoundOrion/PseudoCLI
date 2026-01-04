@@ -6,6 +6,6 @@ namespace PseudoCLI.Command
     {
         string Name { get; }        // コマンド名（例: "cd"）
         string Help { get; }        // 1行説明
-        Task<int> ExecuteAsync(string args, ShellState state); // 0=成功、それ以外=エラーコード
+        Task<int> ExecuteAsync(string args, ShellState state, CmdRunner runner); // 0=成功、それ以外=エラーコード
     }
 }

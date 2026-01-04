@@ -10,7 +10,7 @@ namespace PseudoCLI.Command
         public string Name => "set";
         public string Help => "Set or show environment variables. (set [name[=value]])";
 
-        public async Task<int> ExecuteAsync(string args, ShellState state)
+        public async Task<int> ExecuteAsync(string args, ShellState state, CmdRunner runner)
         {
             args = (args ?? "").Trim();
 
@@ -34,7 +34,7 @@ namespace PseudoCLI.Command
             if (eq < 0)
             {
                 // cmd.exe に委譲（set PATH 等）
-                return await CmdRunner.RunCmdStreamingAsync("set " + args, state);
+                return await runner.RunCmdStreamingAsync("set " + args, state);
             }
 
             string name = args.Substring(0, eq).Trim();
