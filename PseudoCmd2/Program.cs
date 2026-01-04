@@ -25,7 +25,8 @@ namespace PseudoCLI
             Console.WriteLine();
 
             var state = new ShellState().CreateDefault();
-            var builtins = new Builtins(state);
+            var runner = new CmdRunner();
+            var builtins = new Builtins(state, runner);
 
             while (true)
             {
@@ -42,7 +43,7 @@ namespace PseudoCLI
                 if (await builtins.TryHandleAsync(line))
                     continue;
 
-                await CmdRunner.RunCmdStreamingAsync(line, state);
+                await runner.RunCmdStreamingAsync(line, state);
             }
 
             return 0;

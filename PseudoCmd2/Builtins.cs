@@ -9,14 +9,16 @@ namespace PseudoCLI
     internal sealed class Builtins
     {
         private readonly ShellState _state;
+        private readonly CmdRunner _runner;
 
         // コマンド名 → ハンドラ
         private readonly Dictionary<string, Func<string, Task<bool>>> _handlers
             = new Dictionary<string, Func<string, Task<bool>>>(StringComparer.OrdinalIgnoreCase);
 
-        public Builtins(ShellState state)
+        public Builtins(ShellState state, CmdRunner runner)
         {
             _state = state ?? throw new ArgumentNullException(nameof(state));
+            _runner = runner;
 
             // ここで登録（追加が楽）
             Register("cd", HandleCdAsync);
@@ -118,7 +120,7 @@ namespace PseudoCLI
             if (eq < 0)
             {
                 // cmd.exe に委譲（set PATH 等）
-                await CmdRunner.RunCmdStreamingAsync("set " + arg, _state);
+                await _runner.RunCmdStreamingAsync("set " + arg, _state);
                 return true;
             }
 
