@@ -144,8 +144,8 @@ class Program
         // cmd に流す “1本のスクリプト” を組み立てる
         var sb = new StringBuilder();
 
-        //// 文字コード（毎回 cmd 起動するなら仕方ない）
-        //sb.Append("chcp 65001>nul & ");
+        // 文字コード（毎回 cmd 起動するなら仕方ない）
+        sb.Append("chcp 65001>nul & ");
 
         // cwd
         sb.Append("cd /d ");
