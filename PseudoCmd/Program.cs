@@ -5,6 +5,8 @@ class Program
 {
     static async Task<int> Main()
     {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
         Console.Title = "PseudoCLI";
         Console.OutputEncoding = Encoding.UTF8;
         Console.InputEncoding = Encoding.UTF8;
@@ -54,7 +56,7 @@ class Program
     // ----------------------------
     static bool TryHandleCd(string input, ShellState state)
     {
-        if (!input.StartsWith("cd", StringComparison.OrdinalIgnoreCase))
+        if (!StartsWithCommand(input, "cd"))
             return false;
 
         var arg = input.Length > 2 ? input[2..].Trim() : "";
@@ -95,7 +97,7 @@ class Program
     // ----------------------------
     static bool TryHandleSet(string input, ShellState state)
     {
-        if (!input.StartsWith("set", StringComparison.OrdinalIgnoreCase))
+        if (!StartsWithCommand(input, "set"))
             return false;
 
         var arg = input.Length > 3 ? input[3..].Trim() : "";
@@ -139,37 +141,42 @@ class Program
     // ----------------------------
     static async Task<int> RunCmdStreamingAsync(string command, ShellState state)
     {
+        // cmd に流す “1本のスクリプト” を組み立てる
         var sb = new StringBuilder();
 
-        sb.Append("chcp 65001>nul & ");
+        //// 文字コード（毎回 cmd 起動するなら仕方ない）
+        //sb.Append("chcp 65001>nul & ");
 
-        // cwd（CmdArg 使用）
+        // cwd
         sb.Append("cd /d ");
-        sb.Append(CmdArg(state.Cwd));
+        sb.Append(CmdQuote(state.Cwd));
         sb.Append(" & ");
 
-        // 環境変数（CmdArg 使用）
+        // 環境変数：定番の set "A=B"
         foreach (var kv in state.Env)
         {
             sb.Append("set ");
-            sb.Append(CmdArg($"{kv.Key}={kv.Value}"));
+            sb.Append(CmdSetQuote(kv.Key, kv.Value));
             sb.Append(" & ");
         }
 
-        // ユーザー入力コマンド（※ ここはそのまま投げる）
+        // ユーザーコマンド本体（cmd互換優先ならそのまま）
         sb.Append(command);
+
+        var script = sb.ToString();
 
         var psi = new ProcessStartInfo
         {
             FileName = "cmd.exe",
-            Arguments = "/c " + sb.ToString(),
+            // /d: AutoRun無効 /q: echo抑制 /s: 外側引用符の扱い安定 /c: 実行して終了
+            Arguments = "/d /q /c " + script,
             WorkingDirectory = state.Cwd,
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             CreateNoWindow = true,
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8
+            StandardOutputEncoding = Encoding.GetEncoding(932),
+            StandardErrorEncoding = Encoding.GetEncoding(932),
         };
 
         using var p = new Process { StartInfo = psi };
@@ -182,6 +189,36 @@ class Program
         return p.ExitCode;
     }
 
+    /// <summary>
+    /// cd 用： "..." で包む（" は "" に）
+    /// </summary>
+    static string CmdQuote(string s)
+    {
+        s ??= "";
+        return "\"" + s.Replace("\"", "\"\"") + "\"";
+    }
+
+    /// <summary>
+    /// set 用： set "NAME=VALUE" 形式（" は "" に）
+    /// </summary>
+    static string CmdSetQuote(string name, string value)
+    {
+        name ??= "";
+        value ??= "";
+        return "\"" + name.Replace("\"", "\"\"") + "=" + value.Replace("\"", "\"\"") + "\"";
+    }
+
+    /// <summary>
+    /// cmd /c 用： /s と合わせて ""..."" で包む。
+    /// 中の " は "" にしておく（cmdの外側引用符崩れ対策）
+    /// </summary>
+    static string CmdWrapForCmdC(string script)
+    {
+        script ??= "";
+        return "\"\"" + script.Replace("\"", "\"\"") + "\"\"";
+    }
+
+
     static async Task PumpAsync(StreamReader reader, TextWriter writer)
     {
         char[] buf = new char[4096];
@@ -190,21 +227,11 @@ class Program
             await writer.WriteAsync(buf, 0, n);
     }
 
-    // ----------------------------
-    // cmd.exe 用 1引数エスケープ
-    // ----------------------------
-    static string CmdArg(string s)
+    static bool StartsWithCommand(string input, string cmd)
     {
-        if (string.IsNullOrEmpty(s))
-            return "\"\"";
-
-        return "\"" +
-            s.Replace("^", "^^")
-             .Replace("&", "^&")
-             .Replace("|", "^|")
-             .Replace("<", "^<")
-             .Replace(">", "^>")
-             .Replace("\"", "\\\"")
-            + "\"";
+        if (!input.StartsWith(cmd, StringComparison.OrdinalIgnoreCase)) return false;
+        if (input.Length == cmd.Length) return true;
+        return char.IsWhiteSpace(input[cmd.Length]);
     }
+
 }
