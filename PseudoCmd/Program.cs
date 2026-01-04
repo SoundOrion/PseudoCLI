@@ -168,8 +168,6 @@ class Program
         var psi = new ProcessStartInfo
         {
             FileName = "cmd.exe",
-            // /d: AutoRun無効 /q: echo抑制 /s: 外側引用符の扱い安定 /c: 実行して終了
-            Arguments = "/d /q /c " + script,
             WorkingDirectory = state.Cwd,
             UseShellExecute = false,
             RedirectStandardOutput = true,
@@ -178,6 +176,12 @@ class Program
             StandardOutputEncoding = Encoding.GetEncoding(932),
             StandardErrorEncoding = Encoding.GetEncoding(932),
         };
+
+        psi.ArgumentList.Add("/d");
+        psi.ArgumentList.Add("/q");
+        psi.ArgumentList.Add("/s");
+        psi.ArgumentList.Add("/c");
+        psi.ArgumentList.Add(script);
 
         using var p = new Process { StartInfo = psi };
         p.Start();
