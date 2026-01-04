@@ -16,9 +16,12 @@ class Program
         Console.WriteLine("(c) Microsoft Corporation. All rights reserved.");
         Console.WriteLine();
 
+        var defaultCwd = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        Directory.SetCurrentDirectory(defaultCwd);
+
         var state = new ShellState
         {
-            Cwd = Environment.CurrentDirectory
+            Cwd = defaultCwd
         };
 
         while (true)
